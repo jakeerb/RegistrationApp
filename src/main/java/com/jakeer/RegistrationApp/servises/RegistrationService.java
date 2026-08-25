@@ -17,4 +17,6 @@ public interface RegistrationService {
 
     public boolean registerUser(User user);
 
+    public boolean unLockAccount(Integer userId);
+
 }

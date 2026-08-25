@@ -11,16 +11,14 @@ import com.jakeer.RegistrationApp.repositories.CityRepository;
 import com.jakeer.RegistrationApp.repositories.CountryRepository;
 import com.jakeer.RegistrationApp.repositories.StateRepository;
 import com.jakeer.RegistrationApp.repositories.UserRepository;
+import lombok.Data;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 @Service
 public class RegistrationServiceImpl implements RegistrationService {
@@ -180,6 +178,19 @@ public class RegistrationServiceImpl implements RegistrationService {
                 user.getUserEmail()
         );
 
+        return true;
+    }
+
+    @Override
+    public boolean unLockAccount(Integer userId) {
+
+        Userentity user = userRepo.findById(userId).orElse(null);
+        if(user==null){
+            return false;
+        }
+        user.setUserAccStatus("Unlocked");
+        user.setUpdatedDate(new Date());
+        userRepo.save(user);
         return true;
     }
 
