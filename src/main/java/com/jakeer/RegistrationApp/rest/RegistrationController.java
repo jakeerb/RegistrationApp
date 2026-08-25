@@ -53,4 +53,19 @@ public class RegistrationController {
             return new ResponseEntity<>(AppConstants.FAIL, HttpStatus.BAD_REQUEST);
         }
     }
+
+    @PutMapping("/unlock-account/{userId}")
+    public ResponseEntity<String> unlockAccount(@PathVariable Integer userId) {
+
+        boolean unlocked = regService.unLockAccount(userId);
+
+        if (unlocked) {
+            return new ResponseEntity<>("Account unlocked successfully",
+                    HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>("User not found",
+                    HttpStatus.NOT_FOUND);
+        }
+    }
+
 }
