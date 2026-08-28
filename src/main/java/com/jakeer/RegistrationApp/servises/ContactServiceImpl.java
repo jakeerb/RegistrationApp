@@ -2,7 +2,9 @@ package com.jakeer.RegistrationApp.servises;
 
 import com.jakeer.RegistrationApp.bindings.ContactForm;
 import com.jakeer.RegistrationApp.entities.Contact;
+import com.jakeer.RegistrationApp.excpton.ResourceNotFoundException;
 import com.jakeer.RegistrationApp.repositories.ContactRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -20,6 +22,7 @@ public class ContactServiceImpl implements ContactService{
 
 
     @Override
+    @Transactional
     public String saveContact(ContactForm form) {
         Contact entity = new Contact();
         BeanUtils.copyProperties(form,entity);
@@ -44,6 +47,7 @@ List<ContactForm> dataList = new ArrayList<>();
     }
 
     @Override
+    @Transactional
     public ContactForm editContact(Integer contactId) {
 
         Optional<Contact> findById = contactRepo.findById(contactId);
@@ -54,12 +58,19 @@ List<ContactForm> dataList = new ArrayList<>();
             BeanUtils.copyProperties(entity,form);
             return form;
         }
-        return null;
+        //return null;
+
+        throw new ResourceNotFoundException("Contact not found with id: "+contactId);
     }
 
     @Override
+    @Transactional
     public List<ContactForm> deleteContact(Integer contactId) {
+        Optional<Contact> findById = contactRepo.findById(contactId);
+             if(!findById.isPresent()){
+    throw new ResourceNotFoundException("Contact not found with id: "+contactId);
+}
         contactRepo.deleteById(contactId);
-        return viewContacts();
+             return viewContacts();
     }
 }

@@ -34,4 +34,6 @@ public class User {
     private Date createdDate;
 
     private Date updatedDate;
+
+    private Integer loginAttempts = 0;
 }

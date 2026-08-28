@@ -73,4 +73,8 @@ public class Userentity {
 
     @Column(name = "UPDATE_DATE")
     private Date updatedDate;
+
+
+    @Column(name="LOGIN_ATTEMPTS")
+    private Integer loginAttempts = 0;
 }
