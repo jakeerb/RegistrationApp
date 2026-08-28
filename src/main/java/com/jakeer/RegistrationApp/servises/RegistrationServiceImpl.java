@@ -11,11 +11,13 @@ import com.jakeer.RegistrationApp.repositories.CityRepository;
 import com.jakeer.RegistrationApp.repositories.CountryRepository;
 import com.jakeer.RegistrationApp.repositories.StateRepository;
 import com.jakeer.RegistrationApp.repositories.UserRepository;
+import jakarta.transaction.Transactional;
 import lombok.Data;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -40,6 +42,9 @@ public class RegistrationServiceImpl implements RegistrationService {
 
     @Autowired
     private EmailService emailService;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @Override
     public boolean uniqEmail(String email) {
@@ -136,6 +141,7 @@ public class RegistrationServiceImpl implements RegistrationService {
     }
 
     @Override
+    @Transactional
     public boolean registerUser(User user) {
 
         log.info("Registering user with email: {}",
@@ -155,7 +161,7 @@ public class RegistrationServiceImpl implements RegistrationService {
         // Generate temporary password
         String tempPassword = generateTempPwd();
 
-        user.setUserPassword(tempPassword);
+        user.setUserPassword(passwordEncoder.encode(tempPassword));
         user.setUserAccStatus("Locked");
 
         // Convert binding object to entity
@@ -170,7 +176,7 @@ public class RegistrationServiceImpl implements RegistrationService {
         emailService.sendEmail(
                 user.getUserEmail(),
                 "Registration Successful",
-                "Your registration was successful. Welcome to RegistrationApp."
+                "Your registration was successful. your tempprary password is:"+tempPassword+". Please use this password to login."
         );
 
         log.info(
@@ -182,11 +188,13 @@ public class RegistrationServiceImpl implements RegistrationService {
     }
 
     @Override
+    @Transactional
     public boolean unLockAccount(Integer userId) {
 
         Userentity user = userRepo.findById(userId).orElse(null);
         if(user==null){
-            return false;
+           // return false;
+            throw new ResourceNotFoundException("User not found with id: "+ userId);
         }
         user.setUserAccStatus("Unlocked");
         user.setUpdatedDate(new Date());
