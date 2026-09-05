@@ -7,17 +7,16 @@ import com.jakeer.RegistrationApp.entities.StateEntitay;
 import com.jakeer.RegistrationApp.entities.Userentity;
 import com.jakeer.RegistrationApp.excpton.ResourceAlreadyExitsException;
 import com.jakeer.RegistrationApp.excpton.ResourceNotFoundException;
+import com.jakeer.RegistrationApp.kafka.producer.RegistrationKafkaProducer;
 import com.jakeer.RegistrationApp.repositories.CityRepository;
 import com.jakeer.RegistrationApp.repositories.CountryRepository;
 import com.jakeer.RegistrationApp.repositories.StateRepository;
 import com.jakeer.RegistrationApp.repositories.UserRepository;
-import jakarta.transaction.Transactional;
 import lombok.Data;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -44,7 +43,7 @@ public class RegistrationServiceImpl implements RegistrationService {
     private EmailService emailService;
 
     @Autowired
-    private PasswordEncoder passwordEncoder;
+    private RegistrationKafkaProducer kafkaProducer;
 
     @Override
     public boolean uniqEmail(String email) {
@@ -141,7 +140,6 @@ public class RegistrationServiceImpl implements RegistrationService {
     }
 
     @Override
-    @Transactional
     public boolean registerUser(User user) {
 
         log.info("Registering user with email: {}",
@@ -161,7 +159,7 @@ public class RegistrationServiceImpl implements RegistrationService {
         // Generate temporary password
         String tempPassword = generateTempPwd();
 
-        user.setUserPassword(passwordEncoder.encode(tempPassword));
+        user.setUserPassword(tempPassword);
         user.setUserAccStatus("Locked");
 
         // Convert binding object to entity
@@ -172,11 +170,15 @@ public class RegistrationServiceImpl implements RegistrationService {
         // Save user
         userRepo.save(entity);
 
+        String  message="User registrtated successflly with email: "+user.getUserEmail();
+
+        kafkaProducer.sendRegistration(message);
+
         // Send registration email
         emailService.sendEmail(
                 user.getUserEmail(),
                 "Registration Successful",
-                "Your registration was successful. your tempprary password is:"+tempPassword+". Please use this password to login."
+                "Your registration was successful. Welcome to RegistrationApp."
         );
 
         log.info(
@@ -188,13 +190,11 @@ public class RegistrationServiceImpl implements RegistrationService {
     }
 
     @Override
-    @Transactional
     public boolean unLockAccount(Integer userId) {
 
         Userentity user = userRepo.findById(userId).orElse(null);
         if(user==null){
-           // return false;
-            throw new ResourceNotFoundException("User not found with id: "+ userId);
+            return false;
         }
         user.setUserAccStatus("Unlocked");
         user.setUpdatedDate(new Date());
